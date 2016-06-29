@@ -14,6 +14,8 @@
       <sourceFolder url="file://$MODULE_DIR$/src/tests/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/htsjdk/src/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/htsjdk/src/tests/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/scripts" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/testdata" type="java-test-resource" />
       <excludeFolder url="file://$MODULE_DIR$/.command_tmp" />
       <excludeFolder url="file://$MODULE_DIR$/classes" />
     </content>
@@ -50,5 +52,9 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="guava-15.0" level="project" />
+    <orderEntry type="library" name="htsjdk-2.5.0-SNAPSHOT-all" level="project" />
+    <orderEntry type="library" name="testng-6.9.10" level="project" />
+    <orderEntry type="library" name="ant-1.8.1-apache-bcel" level="project" />
+    <orderEntry type="library" name="jmh-core-1.12" level="project" />
   </component>
 </module>

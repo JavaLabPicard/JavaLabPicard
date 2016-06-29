@@ -24,6 +24,8 @@
 package picard.analysis;
 
 import htsjdk.samtools.metrics.MetricsFile;
+import jdk.nashorn.internal.ir.annotations.Ignore;
+import org.openjdk.jmh.annotations.Benchmark;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import picard.PicardException;
@@ -45,18 +47,36 @@ public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
     }
 
     @Test
+    @Benchmark
     public void test() throws IOException {
         final File input = new File(TEST_DATA_DIR, "insert_size_metrics_test.sam");
-        final File outfile   = File.createTempFile("test", ".insert_size_metrics");
-        final File pdf   = File.createTempFile("test", ".pdf");
-        outfile.deleteOnExit();
-        pdf.deleteOnExit();
+        //TODO NOT THROW IT AWAY!!!!
+//        final File outfile   = File.createTempFile("test", ".insert_size_metrics");
+//        final File pdf   = File.createTempFile("test", ".pdf");
+        final File outfile   = new File(TEST_DATA_DIR, "test.insert_size_metrics");
+        final File pdf   = new File(TEST_DATA_DIR, "test.pdf");
+        //TODO NOT THROW IT AWAY!!!!
+//        outfile.deleteOnExit();
+//        pdf.deleteOnExit();
         final String[] args = new String[] {
                 "INPUT="  + input.getAbsolutePath(),
                 "OUTPUT=" + outfile.getAbsolutePath(),
                 "HISTOGRAM_FILE=" + pdf.getAbsolutePath()
         };
+
+
+        //start measure worktime
+        long startTime = System.nanoTime();
+
         Assert.assertEquals(runPicardCommandLine(args), 0);
+
+        //end measure worktime ant print it
+        long endTime = System.nanoTime();
+        double estTime = ((endTime-startTime)/(Math.pow(10, 9)));
+        double finalValue = Math.round( estTime * 1000.0 ) / 1000.0;
+        System.out.print(finalValue + "\t");
+
+
 
         final MetricsFile<InsertSizeMetrics, Comparable<?>> output = new MetricsFile<InsertSizeMetrics, Comparable<?>>();
         output.read(new FileReader(outfile));
@@ -205,7 +225,8 @@ public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
      * See https://github.com/broadinstitute/picard/issues/253
      * Test to be sure that the right number of histograms are being output.
      */
-    @Test
+    //@Test
+    //@Ignore
     public void testHistogramWidthIsSetProperly() throws IOException {
         final File input = new File(TEST_DATA_DIR, "insert_size_metrics_test.sam");
         final File outfile = File.createTempFile("test", ".insert_size_metrics");
@@ -226,7 +247,8 @@ public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
         Assert.assertEquals(output.getAllHistograms().size(), 5);
     }
 
-    @Test
+    //@Test
+    //@Ignore
     public void testMultipleOrientationsForHistogram() throws IOException {
         final File output = new File("testdata/picard/analysis/directed/CollectInsertSizeMetrics", "multiple_orientation.sam.insert_size_metrics");
         final File pdf = File.createTempFile("test", ".pdf");

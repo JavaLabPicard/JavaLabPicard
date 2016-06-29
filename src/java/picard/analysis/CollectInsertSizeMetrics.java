@@ -82,6 +82,7 @@ public class CollectInsertSizeMetrics extends SinglePassSamProgram {
 
     private static final Log log = Log.getInstance(CollectInsertSizeMetrics.class);
     protected static final String Histogram_R_SCRIPT = "picard/analysis/insertSizeHistogram.R";
+//    protected static final String Histogram_R_SCRIPT = "picard/scripts/picard/analysis/insertSizeHistogram.R";
 
     @Option(shortName="H", doc="File to write insert size Histogram chart to.")
     public File Histogram_FILE;
@@ -141,6 +142,7 @@ public class CollectInsertSizeMetrics extends SinglePassSamProgram {
                                                         MINIMUM_PCT, HISTOGRAM_WIDTH, DEVIATIONS, INCLUDE_DUPLICATES);
     }
 
+    //TODO !!!!!!!  CONCURRENT IT!!!!!!
     @Override protected void acceptRead(final SAMRecord record, final ReferenceSequence ref) {
         multiCollector.acceptRecord(record, ref);
     }

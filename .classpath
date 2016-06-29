@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
- <classpathentry kind="src" path="src/java"/>
- <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
- <classpathentry kind="lib" path="lib/testng/testng-5.5-jdk15.jar"/>
- <classpathentry kind="lib" path="lib/ant/bcel-5.2.jar"/>
- <classpathentry kind="output" path="bin"/>
+	<classpathentry kind="src" path="src/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/ant/bcel-5.2.jar"/>
+	<classpathentry kind="lib" path="lib/guava-15.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcommander-1.48.jar"/>
+	<classpathentry kind="lib" path="lib/testng-6.9.10.jar"/>
+	<classpathentry kind="lib" path="lib/ant/ant-1.8.1-apache-bcel.jar"/>
+	<classpathentry kind="lib" path="lib/ant/jacocoant.jar"/>
+	<classpathentry kind="lib" path="htsjdk/src/main/java/htsjdk"/>
+	<classpathentry kind="lib" path="htsjdk/build/libs/htsjdk-2.5.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/Library/Java/JavaVirtualMachines/jdk1.8.0_92.jdk/Contents/Home/lib/tools.jar"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>
