@@ -127,7 +127,9 @@ public abstract class SinglePassSamProgram extends CommandLineProgram {
         final ProgressLogger progress = new ProgressLogger(log);
 
         for (final SAMRecord rec : in) {
+
             final ReferenceSequence ref;
+
             if (walker == null || rec.getReferenceIndex() == SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
                 ref = null;
             } else {
@@ -135,6 +137,12 @@ public abstract class SinglePassSamProgram extends CommandLineProgram {
             }
 
             for (final SinglePassSamProgram program : programs) {
+
+//                System.out.println("program's class and hash " + program);
+//                System.out.println("programs count " + programs.size());
+//                System.out.println("rec" + "\t" + rec);
+//                System.out.println("reF" + "\t" + ref);
+
                 program.acceptRead(rec, ref);
             }
 

@@ -111,7 +111,9 @@ public class CollectInsertSizeMetrics extends SinglePassSamProgram {
 
     /** Required main method implementation. */
     public static void main(final String[] argv) {
+
         new CollectInsertSizeMetrics().instanceMainWithExit(argv);
+
     }
 
     /**

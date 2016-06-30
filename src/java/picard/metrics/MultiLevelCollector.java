@@ -146,9 +146,12 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
         /** Call acceptRecord(args) on the record collector identified by getKey */
         public void acceptRecord(final ARGTYPE args, final SAMReadGroupRecord rg) {
 
+            System.out.println("****************");
+
             String key = UNKNOWN;
             if(rg != null) {
                 final String computedKey = getKey(rg);
+                System.out.println("====================================================================================computedKey: " + computedKey);
                 if(computedKey != null) {
                     key = computedKey;
                 }
@@ -189,6 +192,7 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
         }
 
         public void acceptRecord(final ARGTYPE args, final SAMReadGroupRecord rg) {
+            //System.out.println("allReadCollector's class: " + allReadCollector.getClass());
             allReadCollector.acceptRecord(args);
         }
 
@@ -309,10 +313,20 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
      * this value to all collectors that should include this record
      */
     public void acceptRecord(final SAMRecord record, final ReferenceSequence refSeq) {
+
         final ARGTYPE arg = makeArg(record, refSeq);
 
+        //System.out.println("arg "+ "\t" + arg.getClass() + " this " + this.getClass() + "            ARGS TO STRING              " + arg);
+
         for(final Distributor collector : outputOrderedDistributors) {
-            collector.acceptRecord(arg, record.getReadGroup());
+
+            final SAMReadGroupRecord readGroup = record.getReadGroup();
+
+            //System.out.println("record.getReadGroup()"+ "\t" + readGroup);
+
+            //System.out.println("collector's class: " + collector.getClass());
+
+            collector.acceptRecord(arg, readGroup);
         }
     }
 
@@ -338,4 +352,5 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
             collector.addToFile(file);
         }
     }
+
 }

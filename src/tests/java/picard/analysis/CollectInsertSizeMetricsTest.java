@@ -42,9 +42,11 @@ import java.io.IOException;
 public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
     private static final File TEST_DATA_DIR = new File("testdata/picard/sam/");
 
+    @Override
     public String getCommandLineProgramName() {
         return CollectInsertSizeMetrics.class.getSimpleName();
     }
+
 
     @Test
     @Benchmark

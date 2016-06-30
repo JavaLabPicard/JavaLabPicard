@@ -51,7 +51,9 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
     // This method is called once Per samRecord
     @Override
     protected InsertSizeCollectorArgs makeArg(SAMRecord samRecord, ReferenceSequence refSeq) {
+
         final int insertSize = Math.abs(samRecord.getInferredInsertSize());
+
         final SamPairUtil.PairOrientation orientation = SamPairUtil.getPairOrientation(samRecord);
 
         return new InsertSizeCollectorArgs(insertSize, orientation);
@@ -72,8 +74,10 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                 record.isSecondaryOrSupplementary() ||
                 (record.getDuplicateReadFlag() && !this.includeDuplicates) ||
                 record.getInferredInsertSize() == 0) {
+            //System.out.println("AM HERE: InsertSizeMetricsCollector constructor");
             return;
         }
+        //System.out.println("AM HERE: InsertSizeMetricsCollector constructor====================");
 
         super.acceptRecord(record, refSeq);
     }
@@ -108,8 +112,10 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
             histograms.put(SamPairUtil.PairOrientation.RF,     new Histogram<Integer>("insert_size", prefix + "rf_count"));
         }
 
+        //TODO CONCURRENT IT  !!!!!!!!!
         public void acceptRecord(final InsertSizeCollectorArgs args) {
-            histograms.get(args.getPairOrientation()).increment(args.getInsertSize());
+            histograms.get(args.getPairOrientation())
+                    .increment(args.getInsertSize());
         }
 
         public void finish() { }
@@ -222,5 +228,13 @@ class InsertSizeCollectorArgs {
     public InsertSizeCollectorArgs(final int insertSize, final SamPairUtil.PairOrientation po) {
         this.insertSize = insertSize;
         this.po = po;
+    }
+
+    @Override
+    public String toString() {
+        return "InsertSizeCollectorArgs{" +
+                "insertSize=" + insertSize +
+                ", po=" + po +
+                '}';
     }
 }
