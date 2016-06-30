@@ -24,11 +24,8 @@
 package picard.analysis;
 
 import htsjdk.samtools.metrics.MetricsFile;
-import jdk.nashorn.internal.ir.annotations.Ignore;
-import org.openjdk.jmh.annotations.Benchmark;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-import picard.PicardException;
 import picard.cmdline.CommandLineProgramTest;
 import picard.util.RExecutor;
 
@@ -47,9 +44,8 @@ public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
         return CollectInsertSizeMetrics.class.getSimpleName();
     }
 
-
     @Test
-    @Benchmark
+    //@Benchmark @BenchmarkMode(Mode.AverageTime)
     public void test() throws IOException {
         final File input = new File(TEST_DATA_DIR, "insert_size_metrics_test.sam");
         //TODO NOT THROW IT AWAY!!!!
@@ -69,7 +65,6 @@ public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
 
         //start measure worktime
         long startTime = System.nanoTime();
-
         Assert.assertEquals(runPicardCommandLine(args), 0);
 
         //end measure worktime ant print it

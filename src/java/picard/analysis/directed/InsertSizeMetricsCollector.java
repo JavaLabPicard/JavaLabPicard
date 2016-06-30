@@ -6,6 +6,7 @@ import htsjdk.samtools.SamPairUtil;
 import htsjdk.samtools.metrics.MetricsFile;
 import htsjdk.samtools.reference.ReferenceSequence;
 import htsjdk.samtools.util.Histogram;
+import htsjdk.samtools.util.RuntimeEOFException;
 import picard.analysis.InsertSizeMetrics;
 import picard.analysis.MetricAccumulationLevel;
 import picard.metrics.MultiLevelCollector;
@@ -15,7 +16,15 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Collects InsertSizeMetrics on the specified accumulationLevels using
@@ -84,11 +93,18 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
 
     /** A Collector for individual InsertSizeMetrics for a given SAMPLE or SAMPLE/LIBRARY or SAMPLE/LIBRARY/READ_GROUP (depending on aggregation levels) */
     public class PerUnitInsertSizeMetricsCollector implements PerUnitMetricCollector<InsertSizeMetrics, Integer, InsertSizeCollectorArgs> {
+
         final EnumMap<SamPairUtil.PairOrientation, Histogram<Integer>> histograms = new EnumMap<SamPairUtil.PairOrientation, Histogram<Integer>>(SamPairUtil.PairOrientation.class);
+
         final String sample;
         final String library;
         final String readGroup;
         private double totalInserts = 0;
+
+        private Map<InsertSizeCollectorArgs, Integer> tempHistogram = new ConcurrentHashMap<>();
+        private LinkedBlockingQueue<InsertSizeCollectorArgs> queue = new LinkedBlockingQueue<>();
+          ExecutorService es = Executors.newCachedThreadPool(); //Executors.newFixedThreadPool(10);
+//        String s = "";
 
         public PerUnitInsertSizeMetricsCollector(final String sample, final String library, final String readGroup) {
             this.sample = sample;
@@ -110,12 +126,68 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
             histograms.put(SamPairUtil.PairOrientation.FR,     new Histogram<Integer>("insert_size", prefix + "fr_count"));
             histograms.put(SamPairUtil.PairOrientation.TANDEM, new Histogram<Integer>("insert_size", prefix + "tandem_count"));
             histograms.put(SamPairUtil.PairOrientation.RF,     new Histogram<Integer>("insert_size", prefix + "rf_count"));
+
+
+            for (int i = 0; i<10; i++) {
+                es.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        while (true) {
+                            try {
+                                final InsertSizeCollectorArgs peek = queue.take();
+
+                                if (!tempHistogram.containsKey(peek)) {
+                                    tempHistogram.put(peek, 1);
+                                } else {
+                                    tempHistogram.put(peek, tempHistogram.get(peek) + 1);
+                                }
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException();
+                            }
+                        }
+                    }
+                });
+            }
+
+
+            //es.shutdown();
+
+
+
         }
+
+
 
         //TODO CONCURRENT IT  !!!!!!!!!
         public void acceptRecord(final InsertSizeCollectorArgs args) {
-            histograms.get(args.getPairOrientation())
-                    .increment(args.getInsertSize());
+            //queue.add(args);
+//            queue.offer(args);
+            try {
+                queue.put(args);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println(tempHistogram.size());
+//            System.out.println("queue size: " + queue.size());
+//            System.out.println(s);
+
+//            class MyClass implements Runnable {
+//
+//                @Override
+//                public void run() {
+//                    synchronized (histograms.get(args.getPairOrientation())) {
+//                        histograms.get(args.getPairOrientation())
+//                                .increment(args.getInsertSize());
+//                    }
+//
+//                }
+//            }
+//
+//            es.submit(new MyClass());
+
+
+
+
         }
 
         public void finish() { }
@@ -228,6 +300,25 @@ class InsertSizeCollectorArgs {
     public InsertSizeCollectorArgs(final int insertSize, final SamPairUtil.PairOrientation po) {
         this.insertSize = insertSize;
         this.po = po;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final InsertSizeCollectorArgs that = (InsertSizeCollectorArgs) o;
+
+        if (insertSize != that.insertSize) return false;
+        return po == that.po;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = insertSize;
+        result = 31 * result + (po != null ? po.hashCode() : 0);
+        return result;
     }
 
     @Override

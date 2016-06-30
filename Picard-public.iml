@@ -55,6 +55,7 @@
     <orderEntry type="library" name="htsjdk-2.5.0-SNAPSHOT-all" level="project" />
     <orderEntry type="library" name="testng-6.9.10" level="project" />
     <orderEntry type="library" name="ant-1.8.1-apache-bcel" level="project" />
-    <orderEntry type="library" name="jmh-core-1.12" level="project" />
+    <orderEntry type="library" name="org.openjdk.jmh:jmh-core:1.12" level="project" />
+    <orderEntry type="library" name="org.openjdk.jmh:jmh-generator-annprocess:1.12" level="project" />
   </component>
 </module>

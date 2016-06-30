@@ -58,6 +58,9 @@
       <item index="5" class="java.lang.String" itemvalue="ERROR" />
     </list>
   </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_STRING" value="-parameters" />
+  </component>
   <component name="JavadocGenerationManager">
     <option name="OUTPUT_DIRECTORY" />
     <option name="OPTION_SCOPE" value="protected" />
@@ -309,9 +312,23 @@
       <JAVADOC />
       <SOURCES />
     </library>
-    <library name="jmh-core-1.12">
+    <library name="org.openjdk.jmh:jmh-core:1.12" type="repository">
+      <properties maven-id="org.openjdk.jmh:jmh-core:1.12" />
       <CLASSES>
         <root url="jar://$PROJECT_DIR$/lib/jmh-core-1.12.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jopt-simple-4.6.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/commons-math3-3.2.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
+    <library name="org.openjdk.jmh:jmh-generator-annprocess:1.12" type="repository">
+      <properties maven-id="org.openjdk.jmh:jmh-generator-annprocess:1.12" />
+      <CLASSES>
+        <root url="jar://$PROJECT_DIR$/lib/jmh-generator-annprocess-1.12.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jmh-core-1.12.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jopt-simple-4.6.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/commons-math3-3.2.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES />

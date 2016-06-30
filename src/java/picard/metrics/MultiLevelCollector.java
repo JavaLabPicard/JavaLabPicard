@@ -37,6 +37,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * MultiLevelCollector handles accumulating Metrics at different MetricAccumulationLevels(ALL_READS, SAMPLE, LIBRARY, READ_GROUP).
@@ -312,11 +314,17 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
      * Construct a argument of ARGTYPE using the given SAMRecord and ReferenceSequence then pass
      * this value to all collectors that should include this record
      */
+
+    ExecutorService ex = Executors.newCachedThreadPool();
+
     public void acceptRecord(final SAMRecord record, final ReferenceSequence refSeq) {
 
-        final ARGTYPE arg = makeArg(record, refSeq);
 
-        //System.out.println("arg "+ "\t" + arg.getClass() + " this " + this.getClass() + "            ARGS TO STRING              " + arg);
+        final ARGTYPE arg = makeArg(record, refSeq);;
+
+
+
+       // System.out.println("arg "+ "\t" + arg.getClass() + " this " + this.getClass() + "  ARGS TO STRING    " + arg);
 
         for(final Distributor collector : outputOrderedDistributors) {
 
