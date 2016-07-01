@@ -14,6 +14,7 @@ import picard.metrics.PerUnitMetricCollector;
 
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -51,7 +52,7 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
 
 
     //CONCURRENT //NON CONCURRENT - 32s
-    private static final int THREADS_COUNT = 2;
+    private static final int THREADS_COUNT = 10;
 
 
 
@@ -106,6 +107,7 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
     public class PerUnitInsertSizeMetricsCollector implements PerUnitMetricCollector<InsertSizeMetrics, Integer, InsertSizeCollectorArgs> {
 
         final EnumMap<SamPairUtil.PairOrientation, Histogram<Integer>> histograms = new EnumMap<SamPairUtil.PairOrientation, Histogram<Integer>>(SamPairUtil.PairOrientation.class);
+//        final Map<SamPairUtil.PairOrientation, Histogram<Integer>> histograms = new ConcurrentHashMap<SamPairUtil.PairOrientation, Histogram<Integer>>();
 
         final String sample;
         final String library;
@@ -138,15 +140,36 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
 //CONCURRENT
             for (int i = 0; i < THREADS_COUNT; i++) {
                 es.submit(new Runnable() {
+
                     @Override
                     public void run() {
+
+                        //HashMap<InsertSizeCollectorArgs, Integer> insideMap = new HashMap<InsertSizeCollectorArgs, Integer>();
+                        int maxQueueSize = 0;
+                        int sumSize = 0;
+                        int count = 0;
+
                         while (true) {
                             try {
                                 final InsertSizeCollectorArgs peek = queue.take();
+                                final int size = queue.size();
+                                if (size > maxQueueSize) maxQueueSize = size;
+                                sumSize += size;
+                                count++;
 
                                 if (peek.getInsertSize() == -1) {
+                                    //tempHistogram.putAll(insideMap);
+                                    System.out.println("count " + count + " " + Thread.currentThread().getName());
+                                    System.out.println("max queue " + maxQueueSize);
+                                    System.out.println("avg queue " + (double) sumSize /count);
                                     return;
                                 }
+
+//                                if (!insideMap.containsKey(peek)) {
+//                                    insideMap.put(peek, 1);
+//                                } else {
+//                                    insideMap.put(peek, insideMap.get(peek) + 1);
+//                                }
 
                                 if (!tempHistogram.containsKey(peek)) {
                                     tempHistogram.put(peek, 1);
