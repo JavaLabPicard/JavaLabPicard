@@ -197,11 +197,6 @@ public abstract class SinglePassSamProgram extends CommandLineProgram {
 
             for (final SinglePassSamProgram program : programs) {
 
-//                System.out.println("program's class and hash " + program);
-//                System.out.println("programs count " + programs.size());
-//                System.out.println("rec" + "\t" + rec);
-//                System.out.println("reF" + "\t" + ref);
-
                 program.acceptRead(rec, ref);
             }
 
@@ -218,15 +213,11 @@ public abstract class SinglePassSamProgram extends CommandLineProgram {
             }
         }
 
-        //finishing the work
-        //for (final SinglePassSamProgram program : programs) {
-        //
-        //}
-
         CloserUtil.close(in);
 
         for (final SinglePassSamProgram program : programs) {
 
+            //CONCURRENT
             if (program instanceof CollectInsertSizeMetrics) {
                 program.acceptRead(POISON_PILL, null);
             }

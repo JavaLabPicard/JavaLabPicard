@@ -318,17 +318,9 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
 
         final ARGTYPE arg = makeArg(record, refSeq);;
 
-
-
-       // System.out.println("arg "+ "\t" + arg.getClass() + " this " + this.getClass() + "  ARGS TO STRING    " + arg);
-
         for(final Distributor collector : outputOrderedDistributors) {
 
             final SAMReadGroupRecord readGroup = record.getReadGroup();
-
-            //System.out.println("record.getReadGroup()"+ "\t" + readGroup);
-
-            //System.out.println("collector's class: " + collector.getClass());
 
             collector.acceptRecord(arg, readGroup);
         }

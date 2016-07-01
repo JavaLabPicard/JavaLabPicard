@@ -49,7 +49,11 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
     // If set to true, then duplicates will also be included in the histogram
     private final boolean includeDuplicates;
 
-    private static final int THREADS_COUNT = 1;
+
+    //CONCURRENT //NON CONCURRENT - 32s
+    private static final int THREADS_COUNT = 2;
+
+
 
     public InsertSizeMetricsCollector(final Set<MetricAccumulationLevel> accumulationLevels, final List<SAMReadGroupRecord> samRgRecords,
                                       final double minimumPct, final Integer histogramWidth, final double deviations,
@@ -69,10 +73,9 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
 
         final SamPairUtil.PairOrientation orientation = SamPairUtil.getPairOrientation(samRecord);
 
-        //POISON_PILL flag to finish program
-//        System.out.println("insertSize             " + insertSize);
+
+        //CONCURRENT
         if (samRecord.getAttribute(POISON_PILL_TAG) != null) {
-            //throw new RuntimeException();
             return new InsertSizeCollectorArgs(-1, orientation);
         } else {
             return new InsertSizeCollectorArgs(insertSize, orientation);
@@ -94,12 +97,8 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                 record.isSecondaryOrSupplementary() ||
                 (record.getDuplicateReadFlag() && !this.includeDuplicates) ||
                 record.getInferredInsertSize() == 0) {
-            //System.out.println("AM HERE: InsertSizeMetricsCollector constructor " + record.getAttribute(POISON_PILL_TAG) + " " + record.getReadPairedFlag());
-            //if (record.getAttribute(POISON_PILL_TAG) == null) return;
             return;
         }
-        //System.out.println("AM HERE: InsertSizeMetricsCollector constructor====================");
-
         super.acceptRecord(record, refSeq);
     }
 
@@ -136,7 +135,7 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
             histograms.put(SamPairUtil.PairOrientation.TANDEM, new Histogram<Integer>("insert_size", prefix + "tandem_count"));
             histograms.put(SamPairUtil.PairOrientation.RF, new Histogram<Integer>("insert_size", prefix + "rf_count"));
 
-
+//CONCURRENT
             for (int i = 0; i < THREADS_COUNT; i++) {
                 es.submit(new Runnable() {
                     @Override
@@ -163,16 +162,14 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
             }
 
 
-            //es.shutdown();
-
 
         }
 
 
         //TODO CONCURRENT IT  !!!!!!!!!
         public void acceptRecord(final InsertSizeCollectorArgs args) {
-            //queue.add(args);
-//            queue.offer(args);
+
+            //CONCURRENT
             if (args.getInsertSize() == -1) {
                 for (int i = 0; i < THREADS_COUNT; i++) {
                     try {
