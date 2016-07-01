@@ -312,7 +312,6 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
      * this value to all collectors that should include this record
      */
 
-    ExecutorService ex = Executors.newCachedThreadPool();
 
     public void acceptRecord(final SAMRecord record, final ReferenceSequence refSeq) {
 

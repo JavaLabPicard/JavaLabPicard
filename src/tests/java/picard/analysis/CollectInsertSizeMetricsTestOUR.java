@@ -1,11 +1,16 @@
 package picard.analysis;
 
+import htsjdk.samtools.SAMRecord;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import picard.cmdline.CommandLineProgramTest;
 
 import java.io.File;
 import java.io.IOException;
+
+import static org.testng.Assert.fail;
+import static picard.analysis.SinglePassSamProgram.POISON_PILL;
+import static picard.analysis.SinglePassSamProgram.POISON_PILL_TAG;
 
 /**
  * Created by student on 6/30/16.
@@ -78,5 +83,22 @@ public class CollectInsertSizeMetricsTestOUR  extends CommandLineProgramTest {
         double estTime = ((endTime-startTime)/(Math.pow(10, 9)));
         double finalValue = Math.round( estTime * 1000.0 ) / 1000.0;
         System.out.print(finalValue + "\t");
+    }
+
+    @Test
+    public void testPoisonPill() throws Exception {
+        SAMRecord record = POISON_PILL;
+
+        if (!record.getReadPairedFlag() ||
+                record.getReadUnmappedFlag() ||
+                record.getMateUnmappedFlag() ||
+                record.getFirstOfPairFlag() ||
+                record.isSecondaryOrSupplementary() ||
+                (record.getDuplicateReadFlag()) ||
+                record.getInferredInsertSize() == 0 && record.getAttribute(POISON_PILL_TAG) == null) {
+            //System.out.println("AM HERE: InsertSizeMetricsCollector constructor");
+            fail();
+        }
+        System.out.println(record.getAttribute(POISON_PILL_TAG));
     }
 }

@@ -35,6 +35,7 @@ import htsjdk.samtools.util.CloserUtil;
 import htsjdk.samtools.util.IOUtil;
 import htsjdk.samtools.util.Log;
 import htsjdk.samtools.util.ProgressLogger;
+import htsjdk.samtools.util.RuntimeEOFException;
 import htsjdk.samtools.util.SequenceUtil;
 import picard.PicardException;
 import picard.cmdline.CommandLineProgram;
@@ -70,25 +71,61 @@ public abstract class SinglePassSamProgram extends CommandLineProgram {
 
     public static final String POISON_PILL_TAG = "PP";
 
-    private final static SAMRecord POISON_PILL = new SAMRecord(new SAMFileHeader()) {
-
-        private boolean isPoisonPill;
+    final static SAMRecord POISON_PILL = new SAMRecord(new SAMFileHeader()) {
 
         @Override
-        public void setAttribute(final String tag, final Object value) {
-            if (tag.equals(POISON_PILL_TAG)) {
-                isPoisonPill = true;
-            }
+        public int getInferredInsertSize() {
+            return 1;
         }
 
-        public boolean isPoisonPill() {
-            return isPoisonPill;
+        /*
+        if (!record.getReadPairedFlag() ||
+                record.getReadUnmappedFlag() ||
+                record.getMateUnmappedFlag() ||
+                record.getFirstOfPairFlag() ||
+                record.isSecondaryOrSupplementary() ||
+                (record.getDuplicateReadFlag() && !this.includeDuplicates) ||
+                record.getInferredInsertSize() == 0)
+         */
+
+        @Override
+        public boolean getReadPairedFlag() {
+            return true;
+        }
+
+        @Override
+        public boolean getReadUnmappedFlag() {
+            return false;
+        }
+
+        @Override
+        public boolean getMateUnmappedFlag() {
+            return false;
+        }
+
+        @Override
+        public boolean getFirstOfPairFlag() {
+            return false;
+        }
+
+        @Override
+        public boolean isSecondaryOrSupplementary() {
+            return false;
+        }
+
+        @Override
+        public boolean getDuplicateReadFlag() {
+            return false;
+        }
+
+        @Override
+        public Object getAttribute(final String tag) {
+            if (tag.equals(POISON_PILL_TAG)) {
+                return "not null";
+            }
+            return null;
         }
     };
-
-    static {
-        POISON_PILL.setAttribute(POISON_PILL_TAG, new Object());
-    }
 
     /**
      * Final implementation of doWork() that checks and loads the input and optionally reference
@@ -168,13 +205,6 @@ public abstract class SinglePassSamProgram extends CommandLineProgram {
                 program.acceptRead(rec, ref);
             }
 
-            //finishing the work
-            for (final SinglePassSamProgram program : programs) {
-                if (program instanceof CollectInsertSizeMetrics) {
-                    program.acceptRead(POISON_PILL, null);
-                }
-            }
-
             progress.record(rec);
 
             // See if we need to terminate early?
@@ -188,9 +218,19 @@ public abstract class SinglePassSamProgram extends CommandLineProgram {
             }
         }
 
+        //finishing the work
+        //for (final SinglePassSamProgram program : programs) {
+        //
+        //}
+
         CloserUtil.close(in);
 
         for (final SinglePassSamProgram program : programs) {
+
+            if (program instanceof CollectInsertSizeMetrics) {
+                program.acceptRead(POISON_PILL, null);
+            }
+
             program.finish();
         }
     }

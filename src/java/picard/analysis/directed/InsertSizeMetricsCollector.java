@@ -70,7 +70,9 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
         final SamPairUtil.PairOrientation orientation = SamPairUtil.getPairOrientation(samRecord);
 
         //POISON_PILL flag to finish program
+//        System.out.println("insertSize             " + insertSize);
         if (samRecord.getAttribute(POISON_PILL_TAG) != null) {
+            //throw new RuntimeException();
             return new InsertSizeCollectorArgs(-1, orientation);
         } else {
             return new InsertSizeCollectorArgs(insertSize, orientation);
@@ -92,7 +94,8 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                 record.isSecondaryOrSupplementary() ||
                 (record.getDuplicateReadFlag() && !this.includeDuplicates) ||
                 record.getInferredInsertSize() == 0) {
-            //System.out.println("AM HERE: InsertSizeMetricsCollector constructor");
+            //System.out.println("AM HERE: InsertSizeMetricsCollector constructor " + record.getAttribute(POISON_PILL_TAG) + " " + record.getReadPairedFlag());
+            //if (record.getAttribute(POISON_PILL_TAG) == null) return;
             return;
         }
         //System.out.println("AM HERE: InsertSizeMetricsCollector constructor====================");
@@ -184,6 +187,10 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                for (Map.Entry<InsertSizeCollectorArgs, Integer> entry : tempHistogram.entrySet()) {
+                    histograms.get(entry.getKey().getPairOrientation()).increment(entry.getValue());
+                }
+                //System.out.println(histograms.get(SamPairUtil.PairOrientation.FR).getCount());
             } else {
                 try {
                     queue.put(args);
