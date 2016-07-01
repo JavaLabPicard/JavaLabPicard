@@ -148,12 +148,9 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
         /** Call acceptRecord(args) on the record collector identified by getKey */
         public void acceptRecord(final ARGTYPE args, final SAMReadGroupRecord rg) {
 
-            System.out.println("****************");
-
             String key = UNKNOWN;
             if(rg != null) {
                 final String computedKey = getKey(rg);
-                System.out.println("====================================================================================computedKey: " + computedKey);
                 if(computedKey != null) {
                     key = computedKey;
                 }

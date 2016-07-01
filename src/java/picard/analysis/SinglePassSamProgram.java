@@ -68,6 +68,28 @@ public abstract class SinglePassSamProgram extends CommandLineProgram {
 
     private static final Log log = Log.getInstance(SinglePassSamProgram.class);
 
+    public static final String POISON_PILL_TAG = "PP";
+
+    private final static SAMRecord POISON_PILL = new SAMRecord(new SAMFileHeader()) {
+
+        private boolean isPoisonPill;
+
+        @Override
+        public void setAttribute(final String tag, final Object value) {
+            if (tag.equals(POISON_PILL_TAG)) {
+                isPoisonPill = true;
+            }
+        }
+
+        public boolean isPoisonPill() {
+            return isPoisonPill;
+        }
+    };
+
+    static {
+        POISON_PILL.setAttribute(POISON_PILL_TAG, new Object());
+    }
+
     /**
      * Final implementation of doWork() that checks and loads the input and optionally reference
      * sequence files and the runs the sublcass through the setup() acceptRead() and finish() steps.
@@ -144,6 +166,13 @@ public abstract class SinglePassSamProgram extends CommandLineProgram {
 //                System.out.println("reF" + "\t" + ref);
 
                 program.acceptRead(rec, ref);
+            }
+
+            //finishing the work
+            for (final SinglePassSamProgram program : programs) {
+                if (program instanceof CollectInsertSizeMetrics) {
+                    program.acceptRead(POISON_PILL, null);
+                }
             }
 
             progress.record(rec);

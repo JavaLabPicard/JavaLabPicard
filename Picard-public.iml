@@ -17,6 +17,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/scripts" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/testdata" type="java-test-resource" />
       <excludeFolder url="file://$MODULE_DIR$/.command_tmp" />
+      <excludeFolder url="file://$MODULE_DIR$/bin" />
       <excludeFolder url="file://$MODULE_DIR$/classes" />
     </content>
     <orderEntry type="inheritedJdk" />
