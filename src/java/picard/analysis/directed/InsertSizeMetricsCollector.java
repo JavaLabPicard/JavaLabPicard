@@ -49,7 +49,7 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
     // If set to true, then duplicates will also be included in the histogram
     private final boolean includeDuplicates;
 
-    private static final int THREADS_COUNT = 10;
+    private static final int THREADS_COUNT = 1;
 
     public InsertSizeMetricsCollector(final Set<MetricAccumulationLevel> accumulationLevels, final List<SAMReadGroupRecord> samRgRecords,
                                       final double minimumPct, final Integer histogramWidth, final double deviations,
@@ -188,7 +188,7 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                     e.printStackTrace();
                 }
                 for (Map.Entry<InsertSizeCollectorArgs, Integer> entry : tempHistogram.entrySet()) {
-                    histograms.get(entry.getKey().getPairOrientation()).increment(entry.getValue());
+                    histograms.get(entry.getKey().getPairOrientation()).increment(entry.getKey().getInsertSize(), entry.getValue());
                 }
                 //System.out.println(histograms.get(SamPairUtil.PairOrientation.FR).getCount());
             } else {
@@ -198,23 +198,11 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                     e.printStackTrace();
                 }
             }
-            //System.out.println(tempHistogram.size());
-//            System.out.println("queue size: " + queue.size());
-//            System.out.println(s);
 
-//            class MyClass implements Runnable {
-//
-//                @Override
-//                public void run() {
-//                    synchronized (histograms.get(args.getPairOrientation())) {
+//BEFORE CONCURRENT
 //                        histograms.get(args.getPairOrientation())
 //                                .increment(args.getInsertSize());
-//                    }
-//
-//                }
-//            }
-//
-//            es.submit(new MyClass());
+
 
 
         }

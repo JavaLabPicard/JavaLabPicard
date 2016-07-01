@@ -101,4 +101,33 @@ public class CollectInsertSizeMetricsTestOUR  extends CommandLineProgramTest {
         }
         System.out.println(record.getAttribute(POISON_PILL_TAG));
     }
+
+    @Test
+    public void testBigBamFromTheNet() throws IOException {
+
+        final File input = new File(TEST_DATA_DIR_BAM, "HG00117.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam");
+        final File outfile   = new File(TEST_DATA_DIR_OUTPUT, "HG00117.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.insert_size_metrics");
+        final File pdf   = new File(TEST_DATA_DIR_OUTPUT, "HG00117.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.pdf");
+
+        final String[] args = new String[] {
+                "INPUT="  + input.getAbsolutePath(),
+                "OUTPUT=" + outfile.getAbsolutePath(),
+                "HISTOGRAM_FILE=" + pdf.getAbsolutePath(),
+                "VALIDATION_STRINGENCY=LENIENT"
+
+        };
+
+
+        //start measure worktime
+        long startTime = System.nanoTime();
+
+//        Assert.assertEquals(runPicardCommandLine(args), 0);
+        runPicardCommandLine(args);
+
+        //end measure worktime ant print it
+        long endTime = System.nanoTime();
+        double estTime = ((endTime-startTime)/(Math.pow(10, 9)));
+        double finalValue = Math.round( estTime * 1000.0 ) / 1000.0;
+        System.out.print(finalValue + "\t");
+    }
 }
