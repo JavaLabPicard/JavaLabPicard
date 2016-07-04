@@ -108,12 +108,14 @@ public class CollectInsertSizeMetricsTestOUR  extends CommandLineProgramTest {
         final File input = new File(TEST_DATA_DIR_BAM, "HG00117.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam");
         final File outfile   = new File(TEST_DATA_DIR_OUTPUT, "HG00117.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.insert_size_metrics");
         final File pdf   = new File(TEST_DATA_DIR_OUTPUT, "HG00117.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.pdf");
+        //final File refSeq = new File(TEST_DATA_DIR_BAM, "GRCh38.primary_assembly.genome.fa");
 
         final String[] args = new String[] {
                 "INPUT="  + input.getAbsolutePath(),
                 "OUTPUT=" + outfile.getAbsolutePath(),
                 "HISTOGRAM_FILE=" + pdf.getAbsolutePath(),
                 "VALIDATION_STRINGENCY=LENIENT"
+                //, "REFERENCE_SEQUENCE=" + refSeq.getAbsolutePath()
 
         };
 

@@ -12,6 +12,10 @@ import picard.analysis.MetricAccumulationLevel;
 import picard.metrics.MultiLevelCollector;
 import picard.metrics.PerUnitMetricCollector;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -22,11 +26,16 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static picard.analysis.SinglePassSamProgram.POISON_PILL_TAG;
 
@@ -52,7 +61,7 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
 
 
     //CONCURRENT //NON CONCURRENT - 32s
-    private static final int THREADS_COUNT = 10;
+    private static final int THREADS_COUNT = 3;
 
 
 
@@ -115,8 +124,24 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
         private double totalInserts = 0;
 
         //ADT for concurrent
-        private Map<InsertSizeCollectorArgs, Integer> tempHistogram = new ConcurrentHashMap<>();
+        private ConcurrentMap<InsertSizeCollectorArgs, AtomicInteger> tempHistogram = new ConcurrentHashMap<>();
         private LinkedBlockingQueue<InsertSizeCollectorArgs> queue = new LinkedBlockingQueue<>();
+        private ConcurrentLinkedQueue<Integer> queueSize = new ConcurrentLinkedQueue<Integer>() {
+            @Override
+            public String toString() {
+                int j = 0;
+                StringBuilder sb = new StringBuilder();
+                for (int i : this) {
+                    sb.append(j)
+                            .append(",")
+                            .append(i)
+                            .append("\n");
+                    j++;
+                }
+                return sb.toString();
+            }
+        };
+
         ExecutorService es = Executors.newFixedThreadPool(THREADS_COUNT);
 
         public PerUnitInsertSizeMetricsCollector(final String sample, final String library, final String readGroup) {
@@ -138,6 +163,8 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
             histograms.put(SamPairUtil.PairOrientation.RF, new Histogram<Integer>("insert_size", prefix + "rf_count"));
 
 //CONCURRENT
+
+
             for (int i = 0; i < THREADS_COUNT; i++) {
                 es.submit(new Runnable() {
 
@@ -149,19 +176,21 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                         int sumSize = 0;
                         int count = 0;
 
+
                         while (true) {
                             try {
                                 final InsertSizeCollectorArgs peek = queue.take();
                                 final int size = queue.size();
+                                queueSize.add(size);
                                 if (size > maxQueueSize) maxQueueSize = size;
                                 sumSize += size;
                                 count++;
 
                                 if (peek.getInsertSize() == -1) {
                                     //tempHistogram.putAll(insideMap);
-                                    System.out.println("count " + count + " " + Thread.currentThread().getName());
-                                    System.out.println("max queue " + maxQueueSize);
-                                    System.out.println("avg queue " + (double) sumSize /count);
+//                                    System.out.println("count " + count + " " + Thread.currentThread().getName());
+//                                    System.out.println("max queue " + maxQueueSize);
+//                                    System.out.println("avg queue " + (double) sumSize /count);
                                     return;
                                 }
 
@@ -171,11 +200,16 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
 //                                    insideMap.put(peek, insideMap.get(peek) + 1);
 //                                }
 
-                                if (!tempHistogram.containsKey(peek)) {
-                                    tempHistogram.put(peek, 1);
-                                } else {
-                                    tempHistogram.put(peek, tempHistogram.get(peek) + 1);
-                                }
+                                //tempHistogramUpdateLock.lock();
+                                tempHistogram.putIfAbsent(peek, new AtomicInteger(0));
+                                tempHistogram.get(peek).incrementAndGet();
+//                                if (!tempHistogram.containsKey(peek)) {
+//                                    tempHistogram.put(peek, 1);
+//                                } else {
+//                                    tempHistogram.put(peek, tempHistogram.get(peek) + 1);
+//                                }
+                                //tempHistogramUpdateLock.unlock();
+
                             } catch (InterruptedException e) {
                                 throw new RuntimeException();
                             }
@@ -207,10 +241,11 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                for (Map.Entry<InsertSizeCollectorArgs, Integer> entry : tempHistogram.entrySet()) {
-                    histograms.get(entry.getKey().getPairOrientation()).increment(entry.getKey().getInsertSize(), entry.getValue());
+
+                for (Map.Entry<InsertSizeCollectorArgs, AtomicInteger> entry : tempHistogram.entrySet()) {
+                    histograms.get(entry.getKey().getPairOrientation()).increment(entry.getKey().getInsertSize(), entry.getValue().get());
                 }
-                //System.out.println(histograms.get(SamPairUtil.PairOrientation.FR).getCount());
+
             } else {
                 try {
                     queue.put(args);
