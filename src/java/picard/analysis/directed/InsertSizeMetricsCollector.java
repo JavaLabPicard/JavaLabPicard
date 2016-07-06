@@ -59,10 +59,8 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
     // If set to true, then duplicates will also be included in the histogram
     private final boolean includeDuplicates;
 
-
     //CONCURRENT //NON CONCURRENT - 32s
     private static final int THREADS_COUNT = 3;
-
 
 
     public InsertSizeMetricsCollector(final Set<MetricAccumulationLevel> accumulationLevels, final List<SAMReadGroupRecord> samRgRecords,
@@ -72,7 +70,7 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
         this.histogramWidth = histogramWidth;
         this.deviations = deviations;
         this.includeDuplicates = includeDuplicates;
-        setup(accumulationLevels, samRgRecords);
+        setup(accumulationLevels, samRgRecords); //ReadGroupCollectors coming from here
     }
 
     // We will pass insertSize and PairOrientation with the DefaultPerRecordCollectorArgs passed to the record collectors
@@ -86,7 +84,7 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
 
         //CONCURRENT
         if (samRecord.getAttribute(POISON_PILL_TAG) != null) {
-            return new InsertSizeCollectorArgs(-1, orientation);
+            return new InsertSizeCollectorArgs(-1, SamPairUtil.PairOrientation.FR);
         } else {
             return new InsertSizeCollectorArgs(insertSize, orientation);
         }
@@ -115,36 +113,22 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
     /** A Collector for individual InsertSizeMetrics for a given SAMPLE or SAMPLE/LIBRARY or SAMPLE/LIBRARY/READ_GROUP (depending on aggregation levels) */
     public class PerUnitInsertSizeMetricsCollector implements PerUnitMetricCollector<InsertSizeMetrics, Integer, InsertSizeCollectorArgs> {
 
-        final EnumMap<SamPairUtil.PairOrientation, Histogram<Integer>> histograms = new EnumMap<SamPairUtil.PairOrientation, Histogram<Integer>>(SamPairUtil.PairOrientation.class);
-//        final Map<SamPairUtil.PairOrientation, Histogram<Integer>> histograms = new ConcurrentHashMap<SamPairUtil.PairOrientation, Histogram<Integer>>();
+        final EnumMap<SamPairUtil.PairOrientation, Histogram<Integer>> histograms = new EnumMap<>(SamPairUtil.PairOrientation.class);
 
         final String sample;
         final String library;
         final String readGroup;
         private double totalInserts = 0;
+        private boolean isFinishing = false;
 
         //ADT for concurrent
         private ConcurrentMap<InsertSizeCollectorArgs, AtomicInteger> tempHistogram = new ConcurrentHashMap<>();
         private LinkedBlockingQueue<InsertSizeCollectorArgs> queue = new LinkedBlockingQueue<>();
-        private ConcurrentLinkedQueue<Integer> queueSize = new ConcurrentLinkedQueue<Integer>() {
-            @Override
-            public String toString() {
-                int j = 0;
-                StringBuilder sb = new StringBuilder();
-                for (int i : this) {
-                    sb.append(j)
-                            .append(",")
-                            .append(i)
-                            .append("\n");
-                    j++;
-                }
-                return sb.toString();
-            }
-        };
 
         ExecutorService es = Executors.newFixedThreadPool(THREADS_COUNT);
 
         public PerUnitInsertSizeMetricsCollector(final String sample, final String library, final String readGroup) {
+            //System.out.println("our class");
             this.sample = sample;
             this.library = library;
             this.readGroup = readGroup;
@@ -161,6 +145,8 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
             histograms.put(SamPairUtil.PairOrientation.FR, new Histogram<Integer>("insert_size", prefix + "fr_count"));
             histograms.put(SamPairUtil.PairOrientation.TANDEM, new Histogram<Integer>("insert_size", prefix + "tandem_count"));
             histograms.put(SamPairUtil.PairOrientation.RF, new Histogram<Integer>("insert_size", prefix + "rf_count"));
+
+            System.out.println("creating " + this);
 
 //CONCURRENT
 
@@ -181,34 +167,16 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                             try {
                                 final InsertSizeCollectorArgs peek = queue.take();
                                 final int size = queue.size();
-                                queueSize.add(size);
                                 if (size > maxQueueSize) maxQueueSize = size;
                                 sumSize += size;
                                 count++;
 
                                 if (peek.getInsertSize() == -1) {
-                                    //tempHistogram.putAll(insideMap);
-//                                    System.out.println("count " + count + " " + Thread.currentThread().getName());
-//                                    System.out.println("max queue " + maxQueueSize);
-//                                    System.out.println("avg queue " + (double) sumSize /count);
                                     return;
                                 }
-
-//                                if (!insideMap.containsKey(peek)) {
-//                                    insideMap.put(peek, 1);
-//                                } else {
-//                                    insideMap.put(peek, insideMap.get(peek) + 1);
-//                                }
-
-                                //tempHistogramUpdateLock.lock();
+                                System.out.println("put to histogram, size " + tempHistogram.size());
                                 tempHistogram.putIfAbsent(peek, new AtomicInteger(0));
                                 tempHistogram.get(peek).incrementAndGet();
-//                                if (!tempHistogram.containsKey(peek)) {
-//                                    tempHistogram.put(peek, 1);
-//                                } else {
-//                                    tempHistogram.put(peek, tempHistogram.get(peek) + 1);
-//                                }
-                                //tempHistogramUpdateLock.unlock();
 
                             } catch (InterruptedException e) {
                                 throw new RuntimeException();
@@ -217,7 +185,6 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                     }
                 });
             }
-
 
 
         }
@@ -242,27 +209,31 @@ public class InsertSizeMetricsCollector extends MultiLevelCollector<InsertSizeMe
                     e.printStackTrace();
                 }
 
+                if (!isFinishing) {
+                    System.out.println("finishing, map size " + tempHistogram.size());
+                    isFinishing = true;
+                }
+
                 for (Map.Entry<InsertSizeCollectorArgs, AtomicInteger> entry : tempHistogram.entrySet()) {
                     histograms.get(entry.getKey().getPairOrientation()).increment(entry.getKey().getInsertSize(), entry.getValue().get());
                 }
 
+
             } else {
                 try {
+                    System.out.println("args " + args);
                     queue.put(args);
+                    System.out.println("queue size " + queue.size());
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-
-//BEFORE CONCURRENT
-//                        histograms.get(args.getPairOrientation())
-//                                .increment(args.getInsertSize());
-
-
-
         }
 
-        public void finish() { }
+        //Implement this for us
+        public void finish() {
+            System.out.println("================== " + this);
+        }
 
         public double getTotalInserts() {
             return totalInserts;

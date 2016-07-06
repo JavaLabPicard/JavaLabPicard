@@ -1,11 +1,13 @@
 package picard.analysis;
 
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.metrics.MetricsFile;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import picard.cmdline.CommandLineProgramTest;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 
 import static org.testng.Assert.fail;
@@ -38,14 +40,12 @@ public class CollectInsertSizeMetricsTestOUR  extends CommandLineProgramTest {
                 "INPUT="  + input.getAbsolutePath(),
                 "OUTPUT=" + outfile.getAbsolutePath(),
                 "HISTOGRAM_FILE=" + pdf.getAbsolutePath()
-                //"VALIDATION_STRINGENCY=LENIENT"
         };
 
 
         //start measure worktime
         long startTime = System.nanoTime();
 
-//        Assert.assertEquals(runPicardCommandLine(args), 0);
         runPicardCommandLine(args);
 
         //end measure worktime ant print it
@@ -53,6 +53,26 @@ public class CollectInsertSizeMetricsTestOUR  extends CommandLineProgramTest {
         double estTime = ((endTime-startTime)/(Math.pow(10, 9)));
         double finalValue = Math.round( estTime * 1000.0 ) / 1000.0;
         System.out.print(finalValue + "\t");
+    }
+
+    @Test
+    public void testHistogramWidthIsSetProperly() throws IOException {
+        final File input = new File(TEST_DATA_DIR_SAM, "insert_size_metrics_test.sam");
+        final File outfile = new File(TEST_DATA_DIR_OUTPUT, "test_hist.insert_size_metrics");
+        final File pdf = new File(TEST_DATA_DIR_OUTPUT, "test_hist.pdf");
+
+        final String[] args = new String[] {
+                "INPUT=" + input.getAbsolutePath(),
+                "OUTPUT=" + outfile.getAbsolutePath(),
+                "HISTOGRAM_FILE=" + pdf.getAbsolutePath(),
+                "LEVEL=null",
+                "LEVEL=READ_GROUP"
+        };
+        Assert.assertEquals(runPicardCommandLine(args), 0);
+        final MetricsFile<InsertSizeMetrics, Comparable<?>> output = new MetricsFile<>();
+        output.read(new FileReader(outfile));
+
+        Assert.assertEquals(output.getAllHistograms().size(), 5);
     }
 
 
@@ -75,7 +95,6 @@ public class CollectInsertSizeMetricsTestOUR  extends CommandLineProgramTest {
         //start measure worktime
         long startTime = System.nanoTime();
 
-//        Assert.assertEquals(runPicardCommandLine(args), 0);
         runPicardCommandLine(args);
 
         //end measure worktime ant print it
@@ -96,7 +115,6 @@ public class CollectInsertSizeMetricsTestOUR  extends CommandLineProgramTest {
                 record.isSecondaryOrSupplementary() ||
                 (record.getDuplicateReadFlag()) ||
                 record.getInferredInsertSize() == 0 && record.getAttribute(POISON_PILL_TAG) == null) {
-            //System.out.println("AM HERE: InsertSizeMetricsCollector constructor");
             fail();
         }
         System.out.println(record.getAttribute(POISON_PILL_TAG));
@@ -108,22 +126,18 @@ public class CollectInsertSizeMetricsTestOUR  extends CommandLineProgramTest {
         final File input = new File(TEST_DATA_DIR_BAM, "HG00117.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam");
         final File outfile   = new File(TEST_DATA_DIR_OUTPUT, "HG00117.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.insert_size_metrics");
         final File pdf   = new File(TEST_DATA_DIR_OUTPUT, "HG00117.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.pdf");
-        //final File refSeq = new File(TEST_DATA_DIR_BAM, "GRCh38.primary_assembly.genome.fa");
 
         final String[] args = new String[] {
                 "INPUT="  + input.getAbsolutePath(),
                 "OUTPUT=" + outfile.getAbsolutePath(),
                 "HISTOGRAM_FILE=" + pdf.getAbsolutePath(),
                 "VALIDATION_STRINGENCY=LENIENT"
-                //, "REFERENCE_SEQUENCE=" + refSeq.getAbsolutePath()
-
         };
 
 
         //start measure worktime
         long startTime = System.nanoTime();
 
-//        Assert.assertEquals(runPicardCommandLine(args), 0);
         runPicardCommandLine(args);
 
         //end measure worktime ant print it

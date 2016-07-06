@@ -49,19 +49,15 @@ public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
     public void test() throws IOException {
         final File input = new File(TEST_DATA_DIR, "insert_size_metrics_test.sam");
         //TODO NOT THROW IT AWAY!!!!
-//        final File outfile   = File.createTempFile("test", ".insert_size_metrics");
-//        final File pdf   = File.createTempFile("test", ".pdf");
         final File outfile   = new File(TEST_DATA_DIR, "test.insert_size_metrics");
         final File pdf   = new File(TEST_DATA_DIR, "test.pdf");
         //TODO NOT THROW IT AWAY!!!!
-//        outfile.deleteOnExit();
-//        pdf.deleteOnExit();
+
         final String[] args = new String[] {
                 "INPUT="  + input.getAbsolutePath(),
                 "OUTPUT=" + outfile.getAbsolutePath(),
                 "HISTOGRAM_FILE=" + pdf.getAbsolutePath()
         };
-
 
         //start measure worktime
         long startTime = System.nanoTime();
@@ -72,7 +68,6 @@ public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
         double estTime = ((endTime-startTime)/(Math.pow(10, 9)));
         double finalValue = Math.round( estTime * 1000.0 ) / 1000.0;
         System.out.print(finalValue + "\t");
-
 
 
         final MetricsFile<InsertSizeMetrics, Comparable<?>> output = new MetricsFile<InsertSizeMetrics, Comparable<?>>();
@@ -222,7 +217,7 @@ public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
      * See https://github.com/broadinstitute/picard/issues/253
      * Test to be sure that the right number of histograms are being output.
      */
-    //@Test
+    @Test
     //@Ignore
     public void testHistogramWidthIsSetProperly() throws IOException {
         final File input = new File(TEST_DATA_DIR, "insert_size_metrics_test.sam");
@@ -230,7 +225,7 @@ public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
         final File pdf = File.createTempFile("test", ".pdf");
         outfile.deleteOnExit();
         pdf.deleteOnExit();
-        final String[] args = new String[]{
+        final String[] args = new String[] {
                 "INPUT=" + input.getAbsolutePath(),
                 "OUTPUT=" + outfile.getAbsolutePath(),
                 "HISTOGRAM_FILE=" + pdf.getAbsolutePath(),
@@ -238,13 +233,13 @@ public class CollectInsertSizeMetricsTest extends CommandLineProgramTest {
                 "LEVEL=READ_GROUP"
         };
         Assert.assertEquals(runPicardCommandLine(args), 0);
-        final MetricsFile<InsertSizeMetrics, Comparable<?>> output = new MetricsFile<InsertSizeMetrics, Comparable<?>>();
+        final MetricsFile<InsertSizeMetrics, Comparable<?>> output = new MetricsFile<>();
         output.read(new FileReader(outfile));
 
         Assert.assertEquals(output.getAllHistograms().size(), 5);
     }
 
-    //@Test
+    @Test
     //@Ignore
     public void testMultipleOrientationsForHistogram() throws IOException {
         final File output = new File("testdata/picard/analysis/directed/CollectInsertSizeMetrics", "multiple_orientation.sam.insert_size_metrics");

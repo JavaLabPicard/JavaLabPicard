@@ -31,6 +31,7 @@ import htsjdk.samtools.metrics.MetricsFile;
 import htsjdk.samtools.reference.ReferenceSequence;
 import picard.PicardException;
 import picard.analysis.MetricAccumulationLevel;
+import picard.analysis.directed.InsertSizeMetricsCollector;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -136,6 +137,8 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
                     collectors.put(key, makeCollector(rg));
                 }
             }
+            System.out.println("rgRecs size " + rgRecs.size());
+            System.out.println("collectors size " + collectors.size());
         }
 
         /** Call finish on each PerUnitMetricCollector in this Aggregate Collector */
@@ -147,6 +150,13 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
 
         /** Call acceptRecord(args) on the record collector identified by getKey */
         public void acceptRecord(final ARGTYPE args, final SAMReadGroupRecord rg) {
+
+            if (rg == null) {
+                for (PerUnitMetricCollector<METRIC_TYPE, Histogram_KEY, ARGTYPE> collector : collectors.values()) {
+                    collector.acceptRecord(args);
+                }
+                return;
+            }
 
             String key = UNKNOWN;
             if(rg != null) {
@@ -163,6 +173,7 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
                 collector = makeUnknownCollector();
                 collectors.put(key, collector);
             }
+            System.out.println("collectors accept record " + collector);
             collector.acceptRecord(args);
         }
 
@@ -274,6 +285,7 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
 
         @Override
         protected PerUnitMetricCollector<METRIC_TYPE, Histogram_KEY, ARGTYPE> makeCollector(SAMReadGroupRecord rg) {
+            System.out.println("creating per unit collector");
             return makeReadGroupCollector(rg);
         }
 
@@ -316,7 +328,8 @@ public abstract class MultiLevelCollector<METRIC_TYPE extends MetricBase, Histog
     public void acceptRecord(final SAMRecord record, final ReferenceSequence refSeq) {
 
 
-        final ARGTYPE arg = makeArg(record, refSeq);;
+        final ARGTYPE arg = makeArg(record, refSeq);
+        System.out.println("collectors count " + outputOrderedDistributors.size());
 
         for(final Distributor collector : outputOrderedDistributors) {
 

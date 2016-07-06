@@ -220,6 +220,7 @@ public abstract class SinglePassSamProgram extends CommandLineProgram {
             //CONCURRENT
             if (program instanceof CollectInsertSizeMetrics) {
                 program.acceptRead(POISON_PILL, null);
+                System.out.println("pp");
             }
 
             program.finish();
